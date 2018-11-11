@@ -582,12 +582,11 @@ struct Itemset* GetUniqueItems(ItemsetCollection *head) {
 	}
 	return kq;
 }
-struct ItemsetCollection* doApriori(ItemsetCollection *db, double supportThreshold) {
+struct ItemsetCollection* doApriori(ItemsetCollection *db, double supportThreshold,int first[]) {
 	Itemset *I = GetUniqueItems(db);
-	ItemsetCollection *L = NULL; // tập dữ liệu phổ biến
-	ItemsetCollection *Li = NULL;//tập dữ liệu 
-	ItemsetCollection *Ci = NULL; //tập dữ liệu được lược bớt
-
+	ItemsetCollection *L = NULL;//  tap du lieu pho bien
+	ItemsetCollection *Li = NULL;// tap du lieu 
+	ItemsetCollection *Ci = NULL;// tap du lieu duoc luot bot
 	//duyet su lap lai cua phan tu dau tien trong tap du lieu
 	while (I != NULL)
 	{
@@ -596,8 +595,24 @@ struct ItemsetCollection* doApriori(ItemsetCollection *db, double supportThresho
 		insertFirst_ItemsetCollection(Ci, tmp);
 		I = I->next;
 	}
+	//
+	int first_tt = length_ItemsetCollection(Ci)-1;
+	ItemsetCollection *Ci_tmp1 = Ci;
+	while (Ci_tmp1 != NULL)
+	{
+		if (first[first_tt] >= supportThreshold)
+		{
+			insertFirst_ItemsetCollection(Li, Ci_tmp1->data);
+			insertFirst_ItemsetCollection(L, Ci_tmp1->data);
+		}
+		first_tt--;
+		Ci_tmp1 = Ci_tmp1->next;
+	}
+	clearItemsetCollection(Ci);
+	Ci = FindSubsets(GetUniqueItems(Li), 2);
+	int k = 3;
+	//
 	//su lap lai cac lan ke tiep
-	int k = 2;
 	for (int i = 0; i < length_ItemsetCollection(Ci); i++)
 	{
 		//lay Li tu Ci (phan tu dc luot bo)
@@ -692,32 +707,41 @@ void Mine(ItemsetCollection *db, ItemsetCollection *L, int size_L, double confid
 
 	
 }
-
+int unique_count(ItemsetCollection *db, string a) {
+	ItemsetCollection *tmp1 = db;
+	int kq = 0;
+	while (tmp1 != NULL) {
+		Itemset *tmp2 = tmp1->data;
+		while (tmp2 != NULL) {
+			if (tmp2->data == a) {
+				kq++;
+			}
+			tmp2 = tmp2->next;
+		}
+		tmp1 = tmp1->next;
+	}
+	return kq;
+}
 __global__ void arradd(int* a, int* b, int* c, int size)
 {
 	int myid = threadIdx.x;
 
 	c[myid] = a[myid] + b[myid];
 }
-__global__ void additem(ItemsetCollection *&L, Itemset* Z_, int size)
+__global__ void additem(int *sp_dv, int *kq_dv, int size)
 {
 	int myid = threadIdx.x;
-	//insertFirst_ItemsetCollection_cuda(L, &Z_[myid]);
-	//tao mot link
-	struct ItemsetCollection *link = (struct ItemsetCollection*) malloc(sizeof(struct ItemsetCollection));
 
-	link->data = &Z_[myid];
-
-	//tro link nay toi first Itemset cu
-	link->next = L;
-
-	//tro first toi first Itemset moi
-	L = link;
+	kq_dv[myid] = (int)((sp_dv[myid]*100)/size);
+	//kq_dv[myid] = sp_dv[myid];
 }
 
 int main() {
 	struct Itemset *tmp = NULL;
-
+	int *sp_dv;
+	int *kq_dv;
+	int *kq_host=new int[100];
+	
 
 	struct Itemset *a = NULL;
 	struct Itemset *b = NULL;
@@ -761,23 +785,44 @@ int main() {
 	cout << "\n";
 
 	struct ItemsetCollection *L = NULL;
-	struct ItemsetCollection *L_l = NULL;
 	Itemset *Z_[5];
-	Itemset *Z_l;
 	Z_[0] = a;
 	Z_[1] = b;
 	Z_[2] = c;
 	Z_[3] = d;
 	Z_[4] = e;
 
-	cudaMalloc(&Z_l, 5);
-	cudaMalloc(&L_l, 5);
-	cudaMemcpy(Z_l, Z_, 5, cudaMemcpyHostToDevice);
-	additem << < 1, 5 >> > (L_l,Z_l, 5);
-	cudaMemcpy(L, L_l, 5, cudaMemcpyDeviceToHost);
-
+	for (int i = 0; i < 5; i++) {
+		insertFirst_ItemsetCollection(L, Z_[i]);
+	}
 	print_ItemsetCollection(L);
 	cout << "\n";
+
+	cout << "\nunique item: ";
+	Itemset *uniqueItems = GetUniqueItems(L);
+	print_Itemset(uniqueItems);
+	cout << "\n";
+	int *sp_first = new int[100];
+	Itemset *uni_tmp = uniqueItems;
+	int tt = 0;
+	while (uni_tmp != NULL) {
+		sp_first[tt] = unique_count(L, uni_tmp->data);
+		tt++;
+		kq_host[tt] = 0;
+		uni_tmp = uni_tmp->next;
+	}
+	cudaMalloc(&sp_dv, length_Itemset(uniqueItems) * sizeof(int));
+	cudaMemcpy(sp_dv, sp_first, length_Itemset(uniqueItems) * sizeof(int), cudaMemcpyHostToDevice);
+	cudaMalloc(&kq_dv, length_Itemset(uniqueItems) * sizeof(int));
+
+	additem << < 1, length_Itemset(uniqueItems) >> > (sp_dv, kq_dv, length_ItemsetCollection(L));
+
+	cudaMemcpy(kq_host, kq_dv, length_Itemset(uniqueItems) * sizeof(int), cudaMemcpyDeviceToHost);
+	cudaFree(sp_dv);
+	cudaFree(kq_dv);
+	for (int i = 0; i < 8; i++) {
+		cout << " " << kq_host[i];
+	}
 
 	//covert L to array struct Itemcollection
 	ItemsetCollection db[5];
@@ -787,12 +832,9 @@ int main() {
 		tmp_L = tmp_L->next;
 	}
 
-	Itemset *uniqueItems = GetUniqueItems(L);
-	print_Itemset(uniqueItems);
-	cout << "\n";
 
 	//test apriori(do pho bien)
-	ItemsetCollection *L1 = doApriori(L, 40.0);
+	ItemsetCollection *L1 = doApriori(L, 40.0,kq_host);
 	cout << "\n itemsets in L \n" << countItemsetCollection(L1);//dem tap du lieu pho bien
 	print_ItemsetCollection_sp(L1, L);
 
@@ -811,6 +853,5 @@ int main() {
 	Mine(L, db1, size_L1, 70.0, allRules);
 	cout << "\n rules \n" << countRules(allRules);
 	print_rules(allRules);
-
 
 }

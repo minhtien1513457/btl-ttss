@@ -3,11 +3,11 @@
   D:\1\1\BTL ttss\cuda\1\1>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\bin\nvcc.exe" -gencode=arch=compute_35,code=\"sm_35,compute_35\" --use-local-env -ccbin "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Tools\MSVC\14.15.26726\bin\HostX86\x64" -x cu  -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.0\include"  -G   --keep-dir x64\Debug -maxrregcount=0  --machine 64 --compile -cudart static  -g   -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Fdx64\Debug\vc141.pdb /FS /Zi /RTC1 /MDd " -o x64\Debug\kernel.cu.obj "D:\1\1\BTL ttss\cuda\1\1\kernel.cu" 
 D:/1/1/BTL ttss/cuda/1/1/kernel.cu(366): warning : missing return statement at end of non-void function "deleteKey"
 D:/1/1/BTL ttss/cuda/1/1/kernel.cu(371): warning : variable "tempKey" was declared but never referenced
-D:/1/1/BTL ttss/cuda/1/1/kernel.cu(671): warning : variable "rule" was declared but never referenced
-D:/1/1/BTL ttss/cuda/1/1/kernel.cu(719): warning : variable "tmp" was declared but never referenced
-D:/1/1/BTL ttss/cuda/1/1/kernel.cu(727): warning : variable "z" was declared but never referenced
-D:/1/1/BTL ttss/cuda/1/1/kernel.cu(728): warning : variable "z1" was declared but never referenced
-D:/1/1/BTL ttss/cuda/1/1/kernel.cu(783): warning : variable "db" was set but never used
+D:/1/1/BTL ttss/cuda/1/1/kernel.cu(686): warning : variable "rule" was declared but never referenced
+D:/1/1/BTL ttss/cuda/1/1/kernel.cu(740): warning : variable "tmp" was declared but never referenced
+D:/1/1/BTL ttss/cuda/1/1/kernel.cu(751): warning : variable "z" was declared but never referenced
+D:/1/1/BTL ttss/cuda/1/1/kernel.cu(752): warning : variable "z1" was declared but never referenced
+D:/1/1/BTL ttss/cuda/1/1/kernel.cu(828): warning : variable "db" was set but never used
 D:/1/1/BTL ttss/cuda/1/1/kernel.cu(366): warning : missing return statement at end of non-void function "deleteKey"
   kernel.cu
 D:/1/1/BTL ttss/cuda/1/1/kernel.cu(371): warning C4101: 'tempKey': unreferenced local variable
